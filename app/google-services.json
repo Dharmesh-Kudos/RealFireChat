@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "932336667285",
+    "firebase_url": "https://realfirechat.firebaseio.com",
+    "project_id": "realfirechat",
+    "storage_bucket": "realfirechat.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:932336667285:android:1786c99a7a00aafe",
+        "android_client_info": {
+          "package_name": "com.example.tasol.realfirechat"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "932336667285-hntavmk6hqmt4mgkq0aak1i5c759cu2v.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.tasol.realfirechat",
+            "certificate_hash": "95cfd364796bdcdbf82a2443225ff1b9d5bd1a1f"
+          }
+        },
+        {
+          "client_id": "932336667285-gg0u6ojhv3hsmjgn2jrgqnu6dtbhtks5.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC4Ggq6o918D5k0xjhpJ1cKsdLlJR3ajBQ"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "932336667285-gg0u6ojhv3hsmjgn2jrgqnu6dtbhtks5.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
