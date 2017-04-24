@@ -1,7 +1,9 @@
 package com.example.tasol.realfirechat;
 
 import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
@@ -25,16 +27,19 @@ public class Login extends AppCompatActivity {
     EditText username, password;
     Button loginButton;
     String user, pass;
+    public static final String MyPREFERENCES = "MyPrefs";
+    SharedPreferences sharedpreferences;
+    private SharedPreferences.Editor editor;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
-
-        register = (TextView)findViewById(R.id.register);
-        username = (EditText)findViewById(R.id.username);
-        password = (EditText)findViewById(R.id.password);
-        loginButton = (Button)findViewById(R.id.loginButton);
+        sharedpreferences = getSharedPreferences(MyPREFERENCES, Context.MODE_PRIVATE);
+        register = (TextView) findViewById(R.id.register);
+        username = (EditText) findViewById(R.id.username);
+        password = (EditText) findViewById(R.id.password);
+        loginButton = (Button) findViewById(R.id.loginButton);
 
         register.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -43,43 +48,51 @@ public class Login extends AppCompatActivity {
             }
         });
 
+        if (!sharedpreferences.getString("user", "").isEmpty()) {
+            UserDetails.username = sharedpreferences.getString("user", null);
+            UserDetails.password = sharedpreferences.getString("pass", null);
+            startActivity(new Intent(Login.this, Users.class));
+        }
+
         loginButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 user = username.getText().toString();
                 pass = password.getText().toString();
 
-                if(user.equals("")){
+                if (user.equals("")) {
                     username.setError("can't be blank");
-                }
-                else if(pass.equals("")){
+                } else if (pass.equals("")) {
                     password.setError("can't be blank");
-                }
-                else{
+                } else {
                     String url = "https://realfirechat.firebaseio.com/users.json";
                     final ProgressDialog pd = new ProgressDialog(Login.this);
                     pd.setMessage("Loading...");
                     pd.show();
 
-                    StringRequest request = new StringRequest(Request.Method.GET, url, new Response.Listener<String>(){
+                    StringRequest request = new StringRequest(Request.Method.GET, url, new Response.Listener<String>() {
                         @Override
                         public void onResponse(String s) {
-                            if(s.equals("null")){
+                            if (s.equals("null")) {
                                 Toast.makeText(Login.this, "user not found", Toast.LENGTH_LONG).show();
-                            }
-                            else{
+                            } else {
                                 try {
                                     JSONObject obj = new JSONObject(s);
 
-                                    if(!obj.has(user)){
+                                    if (!obj.has(user)) {
                                         Toast.makeText(Login.this, "user not found", Toast.LENGTH_LONG).show();
-                                    }
-                                    else if(obj.getJSONObject(user).getString("password").equals(pass)){
+                                    } else if (obj.getJSONObject(user).getString("password").equals(pass)) {
                                         UserDetails.username = user;
                                         UserDetails.password = pass;
+                                        SharedPreferences.Editor editor = sharedpreferences.edit();
+
+                                        editor.putString("user", user);
+                                        editor.putString("pass", pass);
+
+                                        editor.commit();
                                         startActivity(new Intent(Login.this, Users.class));
-                                    }
-                                    else {
+                                        finish();
+                                    } else {
                                         Toast.makeText(Login.this, "incorrect password", Toast.LENGTH_LONG).show();
                                     }
                                 } catch (JSONException e) {
@@ -89,7 +102,7 @@ public class Login extends AppCompatActivity {
 
                             pd.dismiss();
                         }
-                    },new Response.ErrorListener(){
+                    }, new Response.ErrorListener() {
                         @Override
                         public void onErrorResponse(VolleyError volleyError) {
                             System.out.println("" + volleyError);
