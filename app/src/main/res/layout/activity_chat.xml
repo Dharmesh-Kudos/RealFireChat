@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:background="#ffffff"
     android:orientation="vertical"
     tools:context=".Chat">
@@ -15,18 +15,18 @@
 
         <android.support.v7.widget.Toolbar
             android:id="@+id/toolbar"
-            app:theme="@style/ThemeOverlay.AppCompat.Dark"
             android:layout_width="match_parent"
+            android:layout_height="match_parent"
             android:background="@color/colorAccent"
-            android:layout_height="match_parent" />
+            app:theme="@style/ThemeOverlay.AppCompat.Dark" />
 
     </android.support.design.widget.AppBarLayout>
 
     <LinearLayout
-        android:background="#00000000"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_marginTop="?attr/actionBarSize"
+        android:background="#00000000"
         android:orientation="vertical">
 
         <ScrollView
@@ -51,17 +51,42 @@
             android:orientation="vertical"
             android:padding="5dp">
 
-            <com.romainpiel.shimmer.ShimmerTextView
-                android:id="@+id/txtTyping"
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:background="@drawable/typing_round"
-                android:padding="5dp"
-                android:text="Dharmesh is Typing...."
-                android:textColor="#FFF"
-                android:textSize="15dp"
-                app:reflectionColor="#4CAF50"
-                android:visibility="gone" />
+                android:gravity="bottom">
+
+                <com.romainpiel.shimmer.ShimmerTextView
+                    android:id="@+id/txtTyping"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/typing_round"
+                    android:padding="5dp"
+                    android:text="Dharmesh is Typing...."
+                    android:textColor="#FFF"
+                    android:textSize="15dp"
+                    android:visibility="gone"
+                    app:reflectionColor="#4CAF50" />
+
+                <LinearLayout
+                    android:id="@+id/imgLayout"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:visibility="gone"
+                    android:background="#44000000"
+                    android:padding="5dp">
+
+                    <ImageView
+                        android:id="@+id/imgPreview"
+                        android:layout_width="match_parent"
+                        android:layout_height="150dp"
+                        android:adjustViewBounds="true"
+                        android:scaleType="fitXY"
+                        android:src="@drawable/demopic" />
+
+                </LinearLayout>
+            </LinearLayout>
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -81,13 +106,20 @@
                     android:padding="5dp"
                     android:textColor="#006064" />
 
+                <ImageView
+                    android:layout_margin="5dp"
+                    android:id="@+id/imgButton"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"
+                    android:src="@drawable/img_link_icon" />
+
                 <TextView
                     android:id="@+id/sendButton"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="Send"
                     android:textColor="#0097A7"
-                    android:textSize="15dp" />
+                    android:textSize="18dp" />
 
             </LinearLayout>
         </LinearLayout>
