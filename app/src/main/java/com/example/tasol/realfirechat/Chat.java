@@ -2,6 +2,7 @@ package com.example.tasol.realfirechat;
 
 import android.*;
 import android.content.ComponentName;
+import android.content.ContentValues;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
@@ -18,8 +19,11 @@ import android.os.Parcelable;
 import android.provider.MediaStore;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.CardView;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 import android.text.Editable;
+import android.text.Html;
 import android.text.TextUtils;
 import android.text.TextWatcher;
 import android.util.Log;
@@ -45,6 +49,7 @@ import com.firebase.client.ChildEventListener;
 import com.firebase.client.DataSnapshot;
 import com.firebase.client.Firebase;
 import com.firebase.client.FirebaseError;
+import com.firebase.client.Query;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.storage.FirebaseStorage;
@@ -92,7 +97,12 @@ public class Chat extends AppCompatActivity {
     private FirebaseApp app;
     private FirebaseStorage storage;
     private Uri downloadUrl;
-    private boolean tickNow=false;
+    private boolean tickNow = false;
+    private ArrayList<Map> mapArrayList = new ArrayList<>();
+    RecyclerViewCartAdapter recyclerViewCartAdapter;
+    RecyclerView chatList;
+    LinearLayoutManager linearLayoutManager;
+    private ArrayList<String> chatDates = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -118,12 +128,17 @@ public class Chat extends AppCompatActivity {
         imgLayout = (LinearLayout) findViewById(R.id.imgLayout);
         imgPreview = (ImageView) findViewById(R.id.imgPreview);
         imgButton = (ImageView) findViewById(R.id.imgButton);
-        layout = (LinearLayout) findViewById(R.id.layout1);
+        //layout = (LinearLayout) findViewById(R.id.layout1);
         sendButton = (TextView) findViewById(R.id.sendButton);
         messageArea = (EditText) findViewById(R.id.messageArea);
-        scrollView = (ScrollView) findViewById(R.id.scrollView);
+        //scrollView = (ScrollView) findViewById(R.id.scrollView);
         txtTyping = (ShimmerTextView) findViewById(R.id.txtTyping);
 
+        chatList = (RecyclerView) findViewById(R.id.chatList);
+        linearLayoutManager = new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false);
+        chatList.setLayoutManager(linearLayoutManager);
+        chatList.setHasFixedSize(true);
+        linearLayoutManager.setStackFromEnd(true);
         Firebase.setAndroidContext(this);
         app = FirebaseApp.getInstance();
         storage = FirebaseStorage.getInstance(app);
@@ -191,10 +206,11 @@ public class Chat extends AppCompatActivity {
                     if (downloadUrl != null) {
                         map.put("image", String.valueOf(downloadUrl));
                     }
-//                    map.put("image", selectedImagePath);
 
                     reference1.push().setValue(map);
+
                     reference2.push().setValue(map);
+
                     messageArea.setText("");
                     downloadUrl = null;
                     imgLayout.setVisibility(View.GONE);
@@ -254,29 +270,15 @@ public class Chat extends AppCompatActivity {
 
 
         reference1.addChildEventListener(new ChildEventListener() {
+
             @Override
             public void onChildAdded(DataSnapshot dataSnapshot, String s) {
                 Map map = dataSnapshot.getValue(Map.class);
-                String message = "";
-                if (map.containsKey("message")) {
-                    message = map.get("message").toString();
-                }
-                String userName = map.get("user").toString();
-                String datestamp = map.get("date").toString();
-                String timestamp = map.get("time").toString();
-                String imgFile = "";
-
-                if (map.containsKey("image")) {
-                    imgFile = map.get("image").toString();
-
-                }
-                if (userName.equals(UserDetails.username)) {
-                    addMessageBox(message, timestamp, imgFile, 1);
-                } else {
-                    addMessageBox(message, timestamp, imgFile, 2);
-                }
-
-
+                mapArrayList.add(map);
+                generateChats(mapArrayList);
+                Log.d("@@@Date= ", chatDates.toString());
+                recyclerViewCartAdapter = new RecyclerViewCartAdapter();
+                chatList.setAdapter(recyclerViewCartAdapter);
             }
 
             @Override
@@ -299,6 +301,168 @@ public class Chat extends AppCompatActivity {
 
             }
         });
+    }
+
+    private void generateChats(ArrayList<Map> mapArrayList) {
+
+        for (int i = 0; i < mapArrayList.size(); i++) {
+            if (i == 0) {
+                chatDates.add(mapArrayList.get(i).get("date").toString());
+            } else {
+                if (Integer.parseInt(mapArrayList.get(i).get("date").toString()
+                        .substring(0, mapArrayList.get(i).get("date").toString().indexOf("-")))
+                        != Integer.parseInt(chatDates.get(i - 1).substring(0, chatDates.get(i - 1).indexOf("-")))) {
+                    chatDates.add(mapArrayList.get(i).get("date").toString());
+                }
+            }
+
+        }
+    }
+
+    private class RecyclerViewCartAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+
+
+        private int TYPE_WITH = 2;
+        private int TYPE_YOU = 1;
+
+        @Override
+        public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+            RecyclerView.ViewHolder viewHolder;
+            if (viewType == TYPE_YOU) {
+                View youView = LayoutInflater.from(parent.getContext()).inflate(R.layout.sender_message_conversation,
+                        parent, false);
+                viewHolder = new YouViewHolder(youView);
+            } else {
+                View withView = LayoutInflater.from(parent.getContext()).inflate(R.layout.reciever_message_conversation,
+                        parent, false);
+                viewHolder = new WithViewHolder(withView);
+            }
+
+            return viewHolder;
+        }
+
+        @Override
+        public int getItemViewType(int position) {
+            if (mapArrayList.get(position).get("user").equals(UserDetails.username)) {
+                return TYPE_YOU;
+            }
+            return TYPE_WITH;
+        }
+
+        @Override
+        public void onBindViewHolder(RecyclerView.ViewHolder holder, final int position) {
+            if (holder instanceof YouViewHolder) {
+                final YouViewHolder viewHolder = (YouViewHolder) holder;
+                Map row = mapArrayList.get(position);
+                if (row.containsKey("message") && row.containsKey("image")) {
+                    viewHolder.txtImageDateTime.setVisibility(View.GONE);
+                    viewHolder.txtInputDateTime.setVisibility(View.VISIBLE);
+                    viewHolder.txtInputDateTime.setText(getFormattedTime(row.get("time").toString()));
+                    viewHolder.text.setVisibility(View.VISIBLE);
+                    viewHolder.text.setText(row.get("message").toString());
+                    viewHolder.imgCard.setVisibility(View.VISIBLE);
+                    viewHolder.imagePreview.setVisibility(View.VISIBLE);
+                    Picasso.with(Chat.this).load(row.get("image").toString()).placeholder(R.drawable.ic_launcher).into(viewHolder.imagePreview);
+                }
+
+                if (!row.containsKey("image") && row.containsKey("message")) {
+                    viewHolder.txtImageDateTime.setVisibility(View.GONE);
+                    viewHolder.txtInputDateTime.setVisibility(View.VISIBLE);
+                    viewHolder.txtInputDateTime.setText(getFormattedTime(row.get("time").toString()));
+                    viewHolder.imgCard.setVisibility(View.GONE);
+                    viewHolder.imagePreview.setVisibility(View.GONE);
+                    viewHolder.text.setVisibility(View.VISIBLE);
+                    viewHolder.text.setText(row.get("message").toString());
+                }
+                if (row.containsKey("image") && !row.containsKey("message")) {
+                    viewHolder.text.setVisibility(View.GONE);
+                    viewHolder.txtInputDateTime.setVisibility(View.GONE);
+                    viewHolder.txtImageDateTime.setVisibility(View.VISIBLE);
+                    viewHolder.txtImageDateTime.setText(getFormattedTime(row.get("time").toString()));
+                    viewHolder.imgCard.setVisibility(View.VISIBLE);
+                    viewHolder.imagePreview.setVisibility(View.VISIBLE);
+                    Picasso.with(Chat.this).load(row.get("image").toString()).placeholder(R.drawable.ic_launcher).into(viewHolder.imagePreview);
+                }
+
+
+            } else if (holder instanceof WithViewHolder) {
+                final WithViewHolder viewHolder = (WithViewHolder) holder;
+                Map row = mapArrayList.get(position);
+                if (row.containsKey("message") && row.containsKey("image")) {
+                    viewHolder.txtImageDateTime.setVisibility(View.GONE);
+                    viewHolder.txtInputDateTime.setVisibility(View.VISIBLE);
+                    viewHolder.txtInputDateTime.setText(getFormattedTime(row.get("time").toString()));
+                    viewHolder.text.setVisibility(View.VISIBLE);
+                    viewHolder.text.setText(row.get("message").toString());
+                    viewHolder.imgCard.setVisibility(View.VISIBLE);
+                    viewHolder.imagePreview.setVisibility(View.VISIBLE);
+                    Picasso.with(Chat.this).load(row.get("image").toString()).placeholder(R.drawable.ic_launcher).into(viewHolder.imagePreview);
+                }
+
+                if (!row.containsKey("image") && row.containsKey("message")) {
+                    viewHolder.txtImageDateTime.setVisibility(View.GONE);
+                    viewHolder.txtInputDateTime.setVisibility(View.VISIBLE);
+                    viewHolder.txtInputDateTime.setText(getFormattedTime(row.get("time").toString()));
+                    viewHolder.imgCard.setVisibility(View.GONE);
+                    viewHolder.imagePreview.setVisibility(View.GONE);
+                    viewHolder.text.setVisibility(View.VISIBLE);
+                    viewHolder.text.setText(row.get("message").toString());
+                }
+                if (row.containsKey("image") && !row.containsKey("message")) {
+                    viewHolder.text.setVisibility(View.GONE);
+                    viewHolder.txtInputDateTime.setVisibility(View.GONE);
+                    viewHolder.txtImageDateTime.setVisibility(View.VISIBLE);
+                    viewHolder.txtImageDateTime.setText(getFormattedTime(row.get("time").toString()));
+                    viewHolder.imgCard.setVisibility(View.VISIBLE);
+                    viewHolder.imagePreview.setVisibility(View.VISIBLE);
+                    Picasso.with(Chat.this).load(row.get("image").toString()).placeholder(R.drawable.ic_launcher).into(viewHolder.imagePreview);
+                }
+
+            }
+        }
+
+
+        @Override
+        public int getItemCount() {
+            return mapArrayList.size();
+        }
+
+        private class YouViewHolder extends RecyclerView.ViewHolder {
+
+
+            private final CardView imgCard;
+            private final TextView text;
+            private final ImageView imagePreview;
+            private final TextView txtInputDateTime;
+            private final TextView txtImageDateTime;
+
+            public YouViewHolder(View parentView) {
+                super(parentView);
+                text = (TextView) parentView.findViewById(R.id.txtInputBox);
+                imagePreview = (ImageView) parentView.findViewById(R.id.imgPreview);
+                txtInputDateTime = (TextView) parentView.findViewById(R.id.txtInputDateTime);
+                txtImageDateTime = (TextView) parentView.findViewById(R.id.txtImageDateTime);
+                imgCard = (CardView) parentView.findViewById(R.id.imgCard);
+            }
+        }
+
+        private class WithViewHolder extends RecyclerView.ViewHolder {
+            private final CardView imgCard;
+            private final TextView text;
+            private final ImageView imagePreview;
+            private final TextView txtInputDateTime;
+            private final TextView txtImageDateTime;
+
+
+            public WithViewHolder(View parentView) {
+                super(parentView);
+                text = (TextView) parentView.findViewById(R.id.txtInputBox);
+                imagePreview = (ImageView) parentView.findViewById(R.id.imgPreview);
+                txtInputDateTime = (TextView) parentView.findViewById(R.id.txtInputDateTime);
+                txtImageDateTime = (TextView) parentView.findViewById(R.id.txtImageDateTime);
+                imgCard = (CardView) parentView.findViewById(R.id.imgCard);
+            }
+        }
     }
 
     @Override
@@ -349,7 +513,7 @@ public class Chat extends AppCompatActivity {
                                 public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
                                     // When the image has successfully uploaded, we get its download URL
                                     downloadUrl = taskSnapshot.getDownloadUrl();
-                                    tickNow=true;
+                                    tickNow = true;
                                     Log.d("DURL_CAM = ", String.valueOf(downloadUrl));
                                     // Send message with Image URL
 
@@ -368,7 +532,7 @@ public class Chat extends AppCompatActivity {
                                 public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
                                     // When the image has successfully uploaded, we get its download URL
                                     downloadUrl = taskSnapshot.getDownloadUrl();
-                                    tickNow=true;
+                                    tickNow = true;
                                     Log.d("DURL_GALLERY = ", String.valueOf(downloadUrl));
                                     // Send message with Image URL
 
@@ -679,80 +843,53 @@ public class Chat extends AppCompatActivity {
         rQueue.add(request);
     }
 
-    public void addMessageBox(String message, String time, String imgFile, int type) {
-        LayoutInflater inflater = LayoutInflater.from(Chat.this);
-
-        if (type == 1) {//YOU
-            View fieldView = inflater.inflate(R.layout.sender_message_conversation, null);
-            TextView text = (TextView) fieldView.findViewById(R.id.txtInputBox);
-            ImageView imagePreview = (ImageView) fieldView.findViewById(R.id.imgPreview);
-            TextView txtInputDateTime = (TextView) fieldView.findViewById(R.id.txtInputDateTime);
-            CardView imgCard= (CardView) fieldView.findViewById(R.id.imgCard);
-            if (message.length() != 0) {
-                text.setVisibility(View.VISIBLE);
-                text.setText(message);
-            }
-            txtInputDateTime.setText(getFormattedTime(time));
-            if (imgFile.length() != 0) {
-                imgCard.setVisibility(View.VISIBLE);
-                imagePreview.setVisibility(View.VISIBLE);
-//                imagePreview.setImageURI(Uri.parse(imgFile));
-                //txtInputDateTime.setTextColor(Color.WHITE);
-                Picasso.with(Chat.this).load(imgFile).placeholder(R.drawable.ic_launcher).into(imagePreview);
-
-            }
-//            textView.setBackgroundColor(getResources().getColor(R.color.accent));
-//            textView.setGravity(Gravity.LEFT);
-//            textView.setPadding(5,5,5,5);
-//            textView.setTextSize(30);
-//            textView.setTextColor(getResources().getColor(R.color.white));
-            layout.addView(fieldView);
-
-        } else {//SAAMNE WALA
-            View fieldView = inflater.inflate(R.layout.reciever_message_conversation, null);
-            TextView text = (TextView) fieldView.findViewById(R.id.txtInputBox);
-            ImageView imagePreview = (ImageView) fieldView.findViewById(R.id.imgPreview);
-            TextView txtInputDateTime = (TextView) fieldView.findViewById(R.id.txtInputDateTime);
-            CardView imgCard= (CardView) fieldView.findViewById(R.id.imgCard);
-            if (message.length() != 0) {
-                text.setVisibility(View.VISIBLE);
-                text.setText(message);
-            }
-            txtInputDateTime.setText(getFormattedTime(time));
-            if (imgFile.length() != 0) {
-                imgCard.setVisibility(View.VISIBLE);
-                imagePreview.setVisibility(View.VISIBLE);
-//                imagePreview.setImageURI(Uri.parse(imgFile));
-                //txtInputDateTime.setTextColor(Color.WHITE);
-                Picasso.with(Chat.this).load(imgFile).placeholder(R.drawable.ic_launcher).into(imagePreview);
-
-            }
-            //            textView.setBackgroundColor(getResources().getColor(R.color.darkPrimary));
-//            textView.setGravity(Gravity.RIGHT);
-//            textView.setTextColor(getResources().getColor(R.color.white));
-//            textView.setPadding(5,5,5,5);
-//            textView.setTextSize(30);
-            layout.addView(fieldView);
-        }
-
-//        TextView textView = new TextView(Chat.this);
-//        textView.setText(message);
-//        textView.setTextColor(Color.WHITE);
-//        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-//        lp.setMargins(0, 0, 0, 10);
-//        textView.setLayoutParams(lp);
+//    public void addMessageBox(String message, String time, String imgFile, int type) {
+//        LayoutInflater inflater = LayoutInflater.from(Chat.this);
 //
-//        if (type == 1) {
-//            textView.setGravity(Gravity.RIGHT);
-//            textView.setBackgroundResource(R.drawable.rounded_corner1);
-//        } else {
-//            textView.setGravity(Gravity.LEFT);
-//            textView.setBackgroundResource(R.drawable.rounded_corner2);
+//        if (type == 1) {//YOU
+//            View fieldView = inflater.inflate(R.layout.sender_message_conversation, null);
+//            TextView text = (TextView) fieldView.findViewById(R.id.txtInputBox);
+//            ImageView imagePreview = (ImageView) fieldView.findViewById(R.id.imgPreview);
+//            TextView txtInputDateTime = (TextView) fieldView.findViewById(R.id.txtInputDateTime);
+//            CardView imgCard = (CardView) fieldView.findViewById(R.id.imgCard);
+//            if (message.length() != 0) {
+//                text.setVisibility(View.VISIBLE);
+//                text.setText(message);
+//            }
+//            txtInputDateTime.setText(getFormattedTime(time));
+//            if (imgFile.length() != 0) {
+//                imgCard.setVisibility(View.VISIBLE);
+//                imagePreview.setVisibility(View.VISIBLE);
+//                Picasso.with(Chat.this).load(imgFile).placeholder(R.drawable.ic_launcher).into(imagePreview);
+//
+//            }
+//
+//            layout.addView(fieldView);
+//
+//        } else {//SAAMNE WALA
+//            View fieldView = inflater.inflate(R.layout.reciever_message_conversation, null);
+//            TextView text = (TextView) fieldView.findViewById(R.id.txtInputBox);
+//            ImageView imagePreview = (ImageView) fieldView.findViewById(R.id.imgPreview);
+//            TextView txtInputDateTime = (TextView) fieldView.findViewById(R.id.txtInputDateTime);
+//            CardView imgCard = (CardView) fieldView.findViewById(R.id.imgCard);
+//            if (message.length() != 0) {
+//                text.setVisibility(View.VISIBLE);
+//                text.setText(message);
+//            }
+//            txtInputDateTime.setText(getFormattedTime(time));
+//            if (imgFile.length() != 0) {
+//                imgCard.setVisibility(View.VISIBLE);
+//                imagePreview.setVisibility(View.VISIBLE);
+//                Picasso.with(Chat.this).load(imgFile).placeholder(R.drawable.ic_launcher).into(imagePreview);
+//
+//            }
+//
+//            layout.addView(fieldView);
 //        }
 //
-//        layout.addView(textView);
-        scrollView.fullScroll(View.FOCUS_DOWN);
-    }
+//
+//        scrollView.fullScroll(View.FOCUS_DOWN);
+//    }
 
     public static String getFormattedTime(String time) {
         Date parsedDate = null;

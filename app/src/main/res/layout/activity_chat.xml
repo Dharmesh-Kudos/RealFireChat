@@ -22,32 +22,39 @@
 
     </android.support.design.widget.AppBarLayout>
 
-    <LinearLayout
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_marginTop="?attr/actionBarSize"
         android:background="#00000000"
         android:orientation="vertical">
 
-        <ScrollView
-            android:id="@+id/scrollView"
+        <!--<ScrollView-->
+        <!--android:id="@+id/scrollView"-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:layout_weight="20">-->
+
+        <!--<LinearLayout-->
+        <!--android:id="@+id/layout1"-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:orientation="vertical">-->
+
+
+        <!--</LinearLayout>-->
+        <!--</ScrollView>-->
+
+        <android.support.v7.widget.RecyclerView
+            android:id="@+id/chatList"
+            android:layout_marginBottom="65dp"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_weight="20">
-
-            <LinearLayout
-                android:id="@+id/layout1"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical">
-
-
-            </LinearLayout>
-        </ScrollView>
+            android:layout_height="match_parent" />
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
             android:orientation="vertical"
             android:padding="5dp">
 
@@ -73,9 +80,9 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:visibility="gone"
                     android:background="#44000000"
-                    android:padding="5dp">
+                    android:padding="5dp"
+                    android:visibility="gone">
 
                     <ImageView
                         android:id="@+id/imgPreview"
@@ -107,10 +114,10 @@
                     android:textColor="#006064" />
 
                 <ImageView
-                    android:layout_margin="5dp"
                     android:id="@+id/imgButton"
                     android:layout_width="30dp"
                     android:layout_height="30dp"
+                    android:layout_margin="5dp"
                     android:src="@drawable/img_link_icon" />
 
                 <TextView
@@ -124,5 +131,5 @@
             </LinearLayout>
         </LinearLayout>
 
-    </LinearLayout>
+    </FrameLayout>
 </android.support.design.widget.CoordinatorLayout>
